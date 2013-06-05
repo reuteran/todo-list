@@ -1,6 +1,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "errno.h"
+#include "string.h"
 
 #define FILENAME "todo.txt"
 #define MAX_ITEMS 20
@@ -18,7 +19,7 @@ typedef struct ToDoItem
 } ToDoItem;
 
 void printItems();
-void insertItem(ToDoItem item);
+void insertItem(char *prio, char *desc);
 void deleteItem(ToDoItem item);
 void init();
 void quit(const char *message);
@@ -40,7 +41,7 @@ void printItems()
 {
 	ToDoItem *current = firstItem;
 	while(current != NULL){
-		printf("Prio: %d\tDesc: %s\n",current->prio,current->desc);
+		printf("Prio: %d \tDesc: %s\n",current->prio,current->desc);
 		current = current->next;
 	}
 
@@ -57,6 +58,28 @@ void quit(const char *message)
 	exit(1);
 }
 
+void insertItem(char *prio_c, char *desc_c)
+{
+	uint prio = atoi(prio_c);
+	if(prio > 100){
+		printf("Priority has to be in [0,100]\n");
+		exit(0);
+	}
+	FILE *file = fopen(FILENAME,"a");
+
+	if(!file){
+		quit("Error reading file");
+	}
+
+	char buffer[strlen(desc_c)+1];
+	strcpy(buffer,desc_c);
+
+	fprintf(file, "%d %s\n",prio,buffer);
+	
+
+	fclose(file);
+
+}
 
 
 void init()
@@ -68,10 +91,10 @@ void init()
 			printf("No ToDos found!\n");
 			exit(0);
 		} else {
-			quit("Error creating todo.txt!");
+			quit("Error creating file");
 		}
 
-		quit("Error opening todo.txt");
+		quit("Error opening file");
 	}
 
 	char buffer[96];
@@ -101,11 +124,16 @@ void init()
 }
 
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
 	if(argc == 1){
 		init();
 		printItems();
+	} else {
+		if(!strcmp(argv[1],"add")){
+			insertItem(argv[2],argv[3]);
+		}
+		
 	}
 
 
