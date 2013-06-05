@@ -16,12 +16,13 @@ typedef struct ToDoItem
 	uint prio;
 	uint id;
 	struct ToDoItem *next;
+	struct ToDoItem *prev;
 
 } ToDoItem;
 
 void printItems();
 void insertItem(char *prio, char *desc);
-void deleteItem(ToDoItem item);
+void deleteItem(uint del_id);
 void init(FILE *file);
 void quit(const char *message);
 int getNextId();
@@ -123,7 +124,11 @@ void quit(const char *message)
 }
 
 
+void deleteItem(uint del_id)
+{
 
+
+}
 
 
 
@@ -181,16 +186,47 @@ void init(FILE *f)
 		firstItem = malloc(sizeof(ToDoItem));
 		sscanf(buffer,"%d %d %[^\n]", &firstItem->id, &firstItem->prio, firstItem->desc);
 
+		firstItem->prev = NULL;
+
 		ToDoItem *last = firstItem;
 
 		while(fgets(buffer,128,file)){
 			ToDoItem *current = malloc(sizeof(ToDoItem));
 			sscanf(buffer,"%d %d %[^\n]",&current->id, &current->prio, current->desc);
-			last->next = current;
-			last = current;
+			ToDoItem *biggest = last;
+
+			while(current->prio > biggest->prio && biggest->prev != NULL){
+				biggest = biggest->prev;
+			}
+
+			if(current->prio <= biggest->prio){
+				current->next = biggest->next;
+				current->prev = biggest;
+
+				if(current->next == NULL){
+					last = current;
+				} else {
+					
+					current->next->prev = current;
+				}
+
+				biggest->next = current;
+			} else {
+				current->prev = NULL;
+				current->next = biggest;
+				biggest->prev = current;
+			}
+
+
 
 		}
 		fclose(file);
+
+		while(last->prev !=NULL){
+			last = last->prev;
+		}
+		firstItem = last;
+
 		initIDs();
 	}
 
@@ -205,7 +241,7 @@ int main(int argc, char *argv[])
 	init(file);
 	if(argc == 1){
 		printItems();
-	} else {
+	} else if(argc>3){
 		if(!strcmp(argv[1],"add")){
 			insertItem(argv[2],argv[3]);
 		}
