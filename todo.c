@@ -67,6 +67,17 @@ FILE *initFile()
 	return file;
 }
 
+void cleanUp() 
+{
+	ToDoItem *current = firstItem;
+	ToDoItem *temp;
+	while(current != NULL){
+		temp = current->next;
+		free(current);
+		current = temp;
+	}
+}
+
 void initIDs()
 {
 
@@ -120,6 +131,7 @@ void quit(const char *message)
 	} else {
 		printf("ERROR: %s\n",message);
 	}
+	cleanUp();
 	exit(1);
 }
 
@@ -247,6 +259,7 @@ int main(int argc, char *argv[])
 		}
 		
 	}
+	cleanUp();
 
 
 
