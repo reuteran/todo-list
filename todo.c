@@ -29,6 +29,7 @@ void quit(const char *message);
 int getNextId();
 void initIDs();
 FILE *initFile();
+void cleanUp();
 
 
 
@@ -136,18 +137,38 @@ void quit(const char *message)
 	exit(1);
 }
 
+void changePrio(unsigned int c_id, unsigned int c_prio)
+{
+	FILE *file = fopen(FILENAME_TMP,"w");
+	if(!file){
+		quit("Error opening file");
+	}
+	ToDoItem *current = firstItem;
+	int i;
+	while(current != NULL){
+		if(current->id == c_id){
+			current->prio = c_prio;
+		}
+		i = fprintf(file,"%u %u %s\n", current->id, current->prio, current->desc);
+		if(i<0){
+				fclose(file);
+				remove(FILENAME_TMP);
+				quit("Error writing to file");
+		}
+
+		current = current->next;
+	}
+
+	fclose(file);
+	remove(FILENAME);
+	rename(FILENAME_TMP,FILENAME);
+
+
+
+}
 
 void deleteItem(unsigned int del_id)
 {
-
-
-
-
-
-
-
-
-
 
 
 	FILE *file = fopen(FILENAME_TMP,"w");
@@ -311,17 +332,29 @@ int main(int argc, char *argv[])
 		if(!strcmp(argv[1],"add")){
 			if(argc<4){
 				printf("Usage: todo add <priority> <text>\n");
-				exit(0);
+			} else {
+				insertItem(argv,argc);
 			}
-			insertItem(argv,argc);
 		}
 
 		if(!strcmp(argv[1],"del")){
 			if(argc<3){
 				printf("Usage: todo del <id>\n");
-				exit(0);
+			} else {
+				deleteItem(atoi(argv[2]));
 			}
-			deleteItem(atoi(argv[2]));
+		}
+
+
+		if(!strcmp(argv[1],"prio")){
+			if(argc < 4){
+				printf("Usage: todo prio <id> <new_prio>\n");
+			} else {
+				changePrio(atoi(argv[2]), atoi(argv[3]));
+
+			}
+
+
 		}
 		
 	}
