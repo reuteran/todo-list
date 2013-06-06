@@ -139,6 +139,17 @@ void quit(const char *message)
 
 void deleteItem(unsigned int del_id)
 {
+
+
+
+
+
+
+
+
+
+
+
 	FILE *file = fopen(FILENAME_TMP,"w");
 
 	if(!file){
@@ -245,10 +256,13 @@ void init(FILE *f)
 			sscanf(buffer,"%d %d %[^\n]",&current->id, &current->prio, current->desc);
 			ToDoItem *biggest = last;
 
+
+			//Find first Item that has a prio bigger than the one be inserted (current)
 			while(current->prio > biggest->prio && biggest->prev != NULL){
 				biggest = biggest->prev;
 			}
 
+			//Insert it 
 			if(current->prio <= biggest->prio){
 				current->next = biggest->next;
 				current->prev = biggest;
@@ -292,11 +306,21 @@ int main(int argc, char *argv[])
 	if(argc == 1){
 		printItems();
 	} else {
+
+
 		if(!strcmp(argv[1],"add")){
+			if(argc<4){
+				printf("Usage: todo add <priority> <text>\n");
+				exit(0);
+			}
 			insertItem(argv,argc);
 		}
 
 		if(!strcmp(argv[1],"del")){
+			if(argc<3){
+				printf("Usage: todo del <id>\n");
+				exit(0);
+			}
 			deleteItem(atoi(argv[2]));
 		}
 		
