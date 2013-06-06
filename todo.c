@@ -4,8 +4,9 @@
 #include "string.h"
 
 #define FILENAME "todo.txt"
+#define FILENAME_TMP "todo_tmp.txt"
 #define MAX_ITEMS 20
-#define MAX_DESC_LEN 96
+#define MAX_DESC_LEN 256
 
 
 
@@ -13,16 +14,16 @@
 typedef struct ToDoItem
 {	
 	char desc[MAX_DESC_LEN];
-	uint prio;
-	uint id;
+	unsigned int prio;
+	unsigned int id;
 	struct ToDoItem *next;
 	struct ToDoItem *prev;
 
 } ToDoItem;
 
 void printItems();
-void insertItem(char *prio, char *desc);
-void deleteItem(uint del_id);
+void insertItem(char *argv[], int argc);
+void deleteItem(unsigned int del_id);
 void init(FILE *file);
 void quit(const char *message);
 int getNextId();
@@ -136,18 +137,55 @@ void quit(const char *message)
 }
 
 
-void deleteItem(uint del_id)
+void deleteItem(unsigned int del_id)
 {
+	FILE *file = fopen(FILENAME_TMP,"w");
+
+	if(!file){
+		quit("Error opening file");
+	}
+
+	ToDoItem *current = firstItem;
+	int i;
+
+	while(current != NULL){
+		if(current->id != del_id){
+			i = fprintf(file, "%u %u %s\n", current->id, current->prio, current->desc);
+			if(i<0){
+				fclose(file);
+				remove(FILENAME_TMP);
+				quit("Error writing to file");
+			}
+		}
+		current = current->next;
+
+	}
+
+	fclose(file);
+	remove(FILENAME);
+	rename(FILENAME_TMP,FILENAME);
+
 
 
 }
 
 
 
-void insertItem(char *prio_c, char *desc_c)
+void insertItem(char *argv[],int argc)
 {
 
-	uint prio = atoi(prio_c);
+	char *prio_c = argv[2];
+	char desc_c[MAX_DESC_LEN];
+
+	strcpy(desc_c,argv[3]);
+
+	int i;
+	for(i = 4;i<argc;i++){
+		strcat(desc_c," ");
+		strcat(desc_c,argv[i]);
+	}
+
+	unsigned int prio = atoi(prio_c);
 
 
 
@@ -161,7 +199,7 @@ void insertItem(char *prio_c, char *desc_c)
 		quit("Error opening file");
 	}
 
-	uint id = getNextId();
+	unsigned int id = getNextId();
 	if(!id){
 		printf("List is full, delete an item before adding a new one\n");
 		exit(0);
@@ -172,7 +210,7 @@ void insertItem(char *prio_c, char *desc_c)
 	strcpy(buffer,desc_c);
 
 	if(fprintf(file, "%d %d %s\n",id,prio,buffer) < 0){
-		ids[id-1] = 0;
+//		ids[id-1] = 0;
 		quit("Error writing to file");
 	}
 	
@@ -253,9 +291,13 @@ int main(int argc, char *argv[])
 	init(file);
 	if(argc == 1){
 		printItems();
-	} else if(argc>3){
+	} else {
 		if(!strcmp(argv[1],"add")){
-			insertItem(argv[2],argv[3]);
+			insertItem(argv,argc);
+		}
+
+		if(!strcmp(argv[1],"del")){
+			deleteItem(atoi(argv[2]));
 		}
 		
 	}
