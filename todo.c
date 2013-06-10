@@ -2,9 +2,14 @@
 #include "stdio.h"
 #include "errno.h"
 #include "string.h"
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <limits.h>
 
-#define FILENAME "/home/ponken/bin/todo/todo.txt"
-#define FILENAME_TMP "/home/ponken/bin/todo/todo_tmp.txt"
+
+#define FILENAME_PATHLESS "todo.txt"
+#define FILENAME_TMP_PATHLESS "todo_tmp.txt"
 #define MAX_ITEMS 20
 #define MAX_DESC_LEN 256
 
@@ -38,7 +43,8 @@ void cleanUp();
 /*Variables*/
 ToDoItem *firstItem;
 int ids[MAX_ITEMS];
-
+char *FILENAME;
+char *FILENAME_TMP;
 
 
 
@@ -304,10 +310,45 @@ void init(FILE *f)
 
 
 }
+void initPaths(char *path){
+
+
+	pid_t pid = getpid();
+	char proc_path[128];
+	char *PATH_BUFFER_EXE = (char*)malloc(128);
+	sprintf(proc_path,"/proc/%d/exe",pid);
+	if(readlink(proc_path,PATH_BUFFER_EXE,128) == -1){
+		quit("readlink error");
+	}
+
+	int i = strlen(PATH_BUFFER_EXE)-1;
+	while(i >= 0){
+		if(PATH_BUFFER_EXE[i] == '/'){
+			break;
+		}
+		i--;
+	}
+	char *PATH_BUFFER = (char*)malloc(i+10);
+	sprintf(PATH_BUFFER,"%.*s",i+1,PATH_BUFFER_EXE);
+
+
+	char *PATH_TMP_BUFFER = (char*)malloc(strlen(PATH_BUFFER));
+	strcpy(PATH_TMP_BUFFER,PATH_BUFFER);
+
+	strcat(PATH_TMP_BUFFER, FILENAME_TMP_PATHLESS);
+	FILENAME_TMP = PATH_TMP_BUFFER;
+	strcat(PATH_BUFFER,FILENAME_PATHLESS);
+	FILENAME = PATH_BUFFER;
+
+}
 
 
 int main(int argc, char *argv[])
 {
+
+	printf("ARGV[0]: %s\n",argv[0]);
+
+//	initPaths(argv[0]);
 
 
 	FILE *file = initFile();
@@ -332,6 +373,7 @@ int main(int argc, char *argv[])
 				deleteItem(atoi(argv[2]));
 			}
 		}
+
 
 		/*
 		if(!strcmp(argv[1],"prio")){
