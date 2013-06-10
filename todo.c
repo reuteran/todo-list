@@ -3,8 +3,8 @@
 #include "errno.h"
 #include "string.h"
 
-#define FILENAME "/home/ponken/bin/todo/todo.txt"
-#define FILENAME_TMP "/home/ponken/bin/todo/todo_tmp.txt"
+#define FILENAME "/home/ponken/bin/todo_res/todo.txt"
+#define FILENAME_TMP "/home/ponken/bin/todo_res/todo_tmp.txt"
 #define MAX_ITEMS 20
 #define MAX_DESC_LEN 256
 
