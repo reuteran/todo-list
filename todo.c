@@ -267,28 +267,35 @@ void init(FILE *f)
 		while(fgets(buffer,128,file)){
 			ToDoItem *current = malloc(sizeof(ToDoItem));
 			sscanf(buffer,"%d %[^\n]",&current->id,current->desc);
-			ToDoItem *biggest = last;
+			ToDoItem *biggest = firstItem;
 
-
-			//Find first Item that has a prio bigger than the one be inserted (current)
-			while(current->id >= biggest->id && biggest->next != NULL){
+			while(biggest->id <= current->id && biggest->next != NULL){
 				biggest = biggest->next;
 			}
 
-			//Now current has to be inserted before biggest
-			//Insert it 
-			if(biggest->next == NULL && current->id >= biggest->id){
-				biggest->next = current;
+			if(current->id >= biggest->id){
+				//attach behind biggest
 				current->prev = biggest;
-				current->next = NULL;
+				current->next = biggest->next;
+				biggest->next = current;
+				//if biggest was not last element
+				if(current->next != NULL){
+					current->next->prev = current;
+				}
 			} else {
-				if(current->id < biggest->id){
-					biggest->prev->next = current;
-					current->prev = biggest->prev;
-					biggest->prev = current;
-					current->next = biggest;
+				//attach in front of target
+				current->next = biggest;
+				current->prev = biggest->prev;
+				biggest->prev = current;
+
+				if(current->prev == NULL){
+					firstItem = current;
+				} else {
+					current->prev->next = current;
+
 				}
 			}
+
 
 		}
 		fclose(file);
@@ -300,6 +307,55 @@ void init(FILE *f)
 
 		initIDs();
 	}
+
+
+
+}
+
+void swapIDs(unsigned int id1, unsigned int id2)
+{
+	FILE *file = fopen(FILENAME_TMP,"w");
+
+	if(!file){
+		quit("Error opening file");
+	}
+
+	ToDoItem *current = firstItem;
+	ToDoItem *item1;
+	ToDoItem *item2;
+	int i;
+
+	//Find Items to swap
+	while(current != NULL){
+		if(current-> id == id1){
+			item1 = current;
+		}
+		if(current->id == id2){
+			item2 = current;
+		}
+		current= current->next;
+
+	}
+
+	item1->id = id2;
+	item2->id = id1;
+
+	current = firstItem;
+
+	while(current != NULL){
+			i = fprintf(file, "%u %s\n", current->id, current->desc);
+			if(i<0){
+				fclose(file);
+				remove(FILENAME_TMP);
+				quit("Error writing to file");
+			}
+		current = current->next;
+
+	}
+
+	fclose(file);
+	remove(FILENAME);
+	rename(FILENAME_TMP,FILENAME);
 
 
 
@@ -330,6 +386,14 @@ int main(int argc, char *argv[])
 				printf("Usage: todo del <id>\n");
 			} else {
 				deleteItem(atoi(argv[2]));
+			}
+		}
+
+		if(!strcmp(argv[1],"swap")){
+			if(argc<4){
+				printf("Usage: todo swap <id1> <id2>\n");
+			} else {
+				swapIDs(atoi(argv[2]), atoi(argv[3]));
 			}
 		}
 
