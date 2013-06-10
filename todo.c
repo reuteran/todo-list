@@ -14,7 +14,6 @@
 typedef struct ToDoItem
 {	
 	char desc[MAX_DESC_LEN];
-	unsigned int prio;
 	unsigned int id;
 	struct ToDoItem *next;
 	struct ToDoItem *prev;
@@ -48,7 +47,7 @@ void printItems()
 {
 	ToDoItem *current = firstItem;
 	while(current != NULL){
-		printf("ID: %d \tPrio: %d \tDesc: %s\n",current->id,current->prio,current->desc);
+		printf("ID: %d \tDesc: %s\n",current->id,current->desc);
 		current = current->next;
 	}
 
@@ -137,6 +136,7 @@ void quit(const char *message)
 	exit(1);
 }
 
+/*
 void changePrio(unsigned int c_id, unsigned int c_prio)
 {
 	FILE *file = fopen(FILENAME_TMP,"w");
@@ -166,7 +166,7 @@ void changePrio(unsigned int c_id, unsigned int c_prio)
 
 
 }
-
+*/
 void deleteItem(unsigned int del_id)
 {
 
@@ -182,7 +182,7 @@ void deleteItem(unsigned int del_id)
 
 	while(current != NULL){
 		if(current->id != del_id){
-			i = fprintf(file, "%u %u %s\n", current->id, current->prio, current->desc);
+			i = fprintf(file, "%u %s\n", current->id, current->desc);
 			if(i<0){
 				fclose(file);
 				remove(FILENAME_TMP);
@@ -206,25 +206,17 @@ void deleteItem(unsigned int del_id)
 void insertItem(char *argv[],int argc)
 {
 
-	char *prio_c = argv[2];
 	char desc_c[MAX_DESC_LEN];
 
-	strcpy(desc_c,argv[3]);
+	strcpy(desc_c,argv[2]);
 
 	int i;
-	for(i = 4;i<argc;i++){
+	for(i = 3;i<argc;i++){
 		strcat(desc_c," ");
 		strcat(desc_c,argv[i]);
 	}
 
-	unsigned int prio = atoi(prio_c);
 
-
-
-	if(prio > 100){
-		printf("Priority has to be in [0,100]\n");
-		exit(0);
-	}
 	FILE *file = fopen(FILENAME,"a");
 
 	if(!file){
@@ -241,7 +233,7 @@ void insertItem(char *argv[],int argc)
 	char buffer[strlen(desc_c)+1];
 	strcpy(buffer,desc_c);
 
-	if(fprintf(file, "%d %d %s\n",id,prio,buffer) < 0){
+	if(fprintf(file, "%u %s\n",id,buffer) < 0){
 //		ids[id-1] = 0;
 		quit("Error writing to file");
 	}
@@ -266,7 +258,7 @@ void init(FILE *f)
 
 
 		firstItem = malloc(sizeof(ToDoItem));
-		sscanf(buffer,"%d %d %[^\n]", &firstItem->id, &firstItem->prio, firstItem->desc);
+		sscanf(buffer,"%u %[^\n]", &firstItem->id, firstItem->desc);
 
 		firstItem->prev = NULL;
 
@@ -274,35 +266,29 @@ void init(FILE *f)
 
 		while(fgets(buffer,128,file)){
 			ToDoItem *current = malloc(sizeof(ToDoItem));
-			sscanf(buffer,"%d %d %[^\n]",&current->id, &current->prio, current->desc);
+			sscanf(buffer,"%d %[^\n]",&current->id,current->desc);
 			ToDoItem *biggest = last;
 
 
 			//Find first Item that has a prio bigger than the one be inserted (current)
-			while(current->prio > biggest->prio && biggest->prev != NULL){
-				biggest = biggest->prev;
+			while(current->id >= biggest->id && biggest->next != NULL){
+				biggest = biggest->next;
 			}
 
+			//Now current has to be inserted before biggest
 			//Insert it 
-			if(current->prio <= biggest->prio){
-				current->next = biggest->next;
-				current->prev = biggest;
-
-				if(current->next == NULL){
-					last = current;
-				} else {
-					
-					current->next->prev = current;
-				}
-
+			if(biggest->next == NULL && current->id >= biggest->id){
 				biggest->next = current;
+				current->prev = biggest;
+				current->next = NULL;
 			} else {
-				current->prev = NULL;
-				current->next = biggest;
-				biggest->prev = current;
+				if(current->id < biggest->id){
+					biggest->prev->next = current;
+					current->prev = biggest->prev;
+					biggest->prev = current;
+					current->next = biggest;
+				}
 			}
-
-
 
 		}
 		fclose(file);
@@ -332,8 +318,8 @@ int main(int argc, char *argv[])
 
 
 		if(!strcmp(argv[1],"add")){
-			if(argc<4){
-				printf("Usage: todo add <priority> <text>\n");
+			if(argc<3){
+				printf("Usage: todo add [<priority>] <text>\n");
 			} else {
 				insertItem(argv,argc);
 			}
@@ -347,7 +333,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-
+		/*
 		if(!strcmp(argv[1],"prio")){
 			if(argc < 4){
 				printf("Usage: todo prio <id> <new_prio>\n");
@@ -358,7 +344,7 @@ int main(int argc, char *argv[])
 
 
 		}
-		
+		*/
 	}
 	cleanUp();
 
