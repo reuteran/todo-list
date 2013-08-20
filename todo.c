@@ -85,15 +85,19 @@ void initIDs()
 	int i;
 	int setIDs[MAX_ITEMS];
 
+	//Init setIDs
 	for(i = 0;i<MAX_ITEMS;i++){
 		setIDs[i] = 0;
 	}
 	ToDoItem *current = firstItem;
 
+	//Get all used IDs
 	while(current !=NULL){
 		setIDs[current->id - 1] = 1;
 		current = current->next;
 	}
+
+	//Then set the global ID array
 	for(i = 0;i<MAX_ITEMS;i++){
 		ids[i] = setIDs[i];
 	}
@@ -180,6 +184,7 @@ void deleteItem(unsigned int del_id)
 	ToDoItem *current = firstItem;
 	int i;
 
+	//Write all items that are not to be deleted in a new file
 	while(current != NULL){
 		if(current->id != del_id){
 			i = fprintf(file, "%u %s\n", current->id, current->desc);
@@ -194,6 +199,8 @@ void deleteItem(unsigned int del_id)
 	}
 
 	fclose(file);
+
+	//Remove original file, rename new file 
 	remove(FILENAME);
 	rename(FILENAME_TMP,FILENAME);
 
@@ -206,28 +213,28 @@ void deleteItem(unsigned int del_id)
 void insertItem(char *argv[],int argc)
 {
 
+
+	//Assemble item description
 	char desc_c[MAX_DESC_LEN];
-
 	strcpy(desc_c,argv[2]);
-
 	int i;
 	for(i = 3;i<argc;i++){
 		strcat(desc_c," ");
 		strcat(desc_c,argv[i]);
 	}
 
+	unsigned int id = getNextId();
+	if(!id){
+		//printf("List is full, delete an item before adding a new one\n");
+		quit("List is full, delete an item before adding a new one\n");
+	}
+
 
 	FILE *file = fopen(FILENAME,"a");
-
 	if(!file){
 		quit("Error opening file");
 	}
 
-	unsigned int id = getNextId();
-	if(!id){
-		printf("List is full, delete an item before adding a new one\n");
-		exit(0);
-	}
 
 
 	char buffer[strlen(desc_c)+1];
@@ -244,11 +251,11 @@ void insertItem(char *argv[],int argc)
 }
 
 
-
+//Reads the existing items from file and puts them into a double linked list, sorted by id
 void init(FILE *f)
 {	
 	FILE *file = f;
-	char buffer[96];
+	char buffer[MAX_DESC_LEN];
 
 	if(!fgets(buffer,95,file)){
 		if(!feof){
@@ -264,26 +271,29 @@ void init(FILE *f)
 
 		ToDoItem *last = firstItem;
 
-		while(fgets(buffer,128,file)){
+		while(fgets(buffer,MAX_DESC_LEN,file)){
 			ToDoItem *current = malloc(sizeof(ToDoItem));
 			sscanf(buffer,"%d %[^\n]",&current->id,current->desc);
+
+			//biggest is the item the item that is just bigger than the current (next biggest)
 			ToDoItem *biggest = firstItem;
 
 			while(biggest->id <= current->id && biggest->next != NULL){
 				biggest = biggest->next;
 			}
 
+			//If current does not have a "biggest", as in there is no item with a bigger id than current
 			if(current->id >= biggest->id){
 				//attach behind biggest
 				current->prev = biggest;
 				current->next = biggest->next;
 				biggest->next = current;
-				//if biggest was not last element
+				//if biggest was not last element, which really shouldn't be possible
 				if(current->next != NULL){
 					current->next->prev = current;
 				}
 			} else {
-				//attach in front of target
+				//attach in front of biggest
 				current->next = biggest;
 				current->prev = biggest->prev;
 				biggest->prev = current;
